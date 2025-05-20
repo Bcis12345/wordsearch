@@ -6,7 +6,7 @@
   <style>
     body {
       background: linear-gradient(to right, #fceabb, #f8b500);
-      font-family: Aerial;
+      font-family: Arial, sans-serif;
       font-weight: bold;
       text-align: center;
       padding: 20px;
@@ -15,29 +15,28 @@
 
     h1 {
       color: #444;
-      font-weight: bold;
     }
 
     #grid {
       display: grid;
-      grid-template-columns: repeat(18, 60px);
-     
+      grid-template-columns: repeat(20, 30px); /* Grid size: 20 columns */
       justify-content: center;
       margin-top: 20px;
+      border: 2px solid #ccc;
     }
 
     .cell {
-      width: 50px;
-      height: 50px;
+      width: 30px;
+      height: 30px;
       background: #fff;
-      border: 1px solid #ccc;
-      font-size: 18px;
-      font-weight: bold;
+      border: 1px solid #999;
+      font-size: 16px;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
       user-select: none;
+      box-sizing: border-box;
     }
 
     .selected {
@@ -52,12 +51,11 @@
 
     #wordList {
       margin-top: 20px;
-      font-size: 18px;
+      font-size: 16px;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
-      font-weight: bold;
     }
 
     .done {
@@ -65,24 +63,12 @@
       color: gray;
     }
 
-    /* Flying letter styles */
     .flying-letter {
       position: absolute;
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
-      animation: fly 2s ease-out forwards;
       pointer-events: none;
-    }
-
-    @keyframes fly {
-      0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(calc(-200px + 400px * random()), calc(-150px + 300px * random())) scale(2);
-      }
+      transition: all 2s ease-out;
     }
   </style>
 </head>
@@ -94,19 +80,53 @@
 
 <script>
   const words = ["Alana", "Nicole", "Eddie", "Aaron", "Jayden", "Ai", "Noma", "Yoogeun", "Halle", "Aliz", "Eric", "Chloe", "Xender", "Wadi", "Mango", "Leo"];
-  const gridSize = 16;
+  const gridSize = 20;
   const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
 
-  function placeWordsHorizontally() {
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i].toUpperCase();
-      let row = i % gridSize;
-      const maxStart = gridSize - word.length;
-      const col = Math.floor(Math.random() * (maxStart + 1));
-      for (let j = 0; j < word.length; j++) {
-        grid[row][col + j] = word[j];
+  function placeWords() {
+    words.forEach(word => {
+      const uppercaseWord = word.toUpperCase();
+      const isHorizontal = Math.random() < 0.5;
+      let placed = false;
+
+      for (let tries = 0; tries < 100 && !placed; tries++) {
+        const row = Math.floor(Math.random() * gridSize);
+        const col = Math.floor(Math.random() * gridSize);
+        const length = uppercaseWord.length;
+
+        if (isHorizontal && col + length <= gridSize) {
+          let canPlace = true;
+          for (let i = 0; i < length; i++) {
+            if (grid[row][col + i] !== "") {
+              canPlace = false;
+              break;
+            }
+          }
+          if (canPlace) {
+            for (let i = 0; i < length; i++) {
+              grid[row][col + i] = uppercaseWord[i];
+            }
+            placed = true;
+          }
+        } else if (!isHorizontal && row + length <= gridSize) {
+          let canPlace = true;
+          for (let i = 0; i < length; i++) {
+            if (grid[row + i][col] !== "") {
+              canPlace = false;
+              break;
+            }
+          }
+          if (canPlace) {
+            for (let i = 0; i < length; i++) {
+              grid[row + i][col] = uppercaseWord[i];
+            }
+            placed = true;
+          }
+        }
       }
-    }
+
+      if (!placed) console.warn("Could not place word:", word);
+    });
   }
 
   function fillRandomLetters() {
@@ -161,14 +181,13 @@
         c.classList.add("found");
       });
 
-      launchFlyingLetters(selectedCells); // 🎉 fly effect
-
+      launchFlyingLetters(selectedCells);
       foundWords.push(match);
       selectedCells = [];
       updateWordList();
 
       if (foundWords.length === words.length) {
-        setTimeout(() => alert("🎉 You found all the words! 🎉"), 100);
+        setTimeout(() => alert("🎉 You found all the words! 🎉"), 200);
       }
     }
   }
@@ -184,7 +203,6 @@
     });
   }
 
-  // 💫 Flying letter animation
   function launchFlyingLetters(cells) {
     cells.forEach(cell => {
       const letter = cell.textContent;
@@ -193,20 +211,19 @@
       flying.textContent = letter;
 
       const rect = cell.getBoundingClientRect();
-      flying.style.left = rect.left + "px";
-      flying.style.top = rect.top + "px";
+      flying.style.left = `${rect.left}px`;
+      flying.style.top = `${rect.top}px`;
 
-      // Custom fly animation path (randomized)
-      flying.style.transform = `translate(${Math.random() * 400 - 200}px, ${Math.random() * 300 - 150}px) scale(2)`;
-      flying.style.transition = "all 2s ease-out";
+      const dx = Math.random() * 400 - 200;
+      const dy = Math.random() * 300 - 150;
+      flying.style.transform = `translate(${dx}px, ${dy}px) scale(2)`;
 
       document.body.appendChild(flying);
-
       setTimeout(() => flying.remove(), 2000);
     });
   }
 
-  placeWordsHorizontally();
+  placeWords();
   fillRandomLetters();
   renderGrid();
 </script>
