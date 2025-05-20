@@ -2,51 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Word Search Game</title>
+  <title>Word Search Game - Year 6</title>
   <style>
     body {
-      background: linear-gradient(to right, #fceabb, #f8b500);
+      background: #fdf6e3;
       font-family: Arial, sans-serif;
       font-weight: bold;
       text-align: center;
       padding: 20px;
-      overflow: hidden;
+      margin: 0;
     }
 
     h1 {
-      color: #444;
+      color: #333;
     }
 
     #grid {
       display: grid;
-      grid-template-columns: repeat(20, 30px); /* Grid size: 20 columns */
+      grid-template-columns: repeat(12, 35px);
       justify-content: center;
-      margin-top: 20px;
-      border: 1px solid #ccc;
+      margin: 20px auto;
     }
 
     .cell {
-      width: 30px;
-      height: 30px;
-      background: #fff;
+      width: 35px;
+      height: 35px;
       border: 1px solid #999;
-      font-size: 16px;
       display: flex;
       justify-content: center;
       align-items: center;
-      cursor: pointer;
+      font-size: 18px;
       user-select: none;
+      cursor: pointer;
       box-sizing: border-box;
     }
 
     .selected {
-      background: orange;
-      color: #fff;
+      background-color: orange;
+      color: white;
     }
 
     .found {
-      background: lightgreen;
-      color: #000;
+      background-color: lightgreen;
+      color: black;
     }
 
     #wordList {
@@ -74,62 +72,69 @@
 </head>
 <body>
 
-<h1>🧩 Word Search Game 🧩</h1>
+<h1>🔍 Word Search Game</h1>
 <div id="grid"></div>
 <div id="wordList"></div>
 
 <script>
-  const words = ["Alana", "Nicole", "Eddie", "Aaron", "Jayden", "Ai", "Noma", "Yoogeun", "Halle", "Aliz", "Eric", "Chloe", "Xender", "Wadi", "Mango", "Leo"];
-  const gridSize = 20;
+  const words = ["Alana", "Nicole", "Eddie", "Aaron", "Jayden", "Ai", "Noma", "Yoogeun", "Halle", "Aliz", "Eric", "Chloe"];
+  const gridSize = 12;
   const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
+
+  function checkOverlap(row, col, word, horizontal) {
+    for (let i = 0; i < word.length; i++) {
+      const r = horizontal ? row : row + i;
+      const c = horizontal ? col + i : col;
+      const current = grid[r][c];
+      if (current && current !== word[i]) return false;
+    }
+
+    // Prevent 90° crossing
+    for (let i = 0; i < word.length; i++) {
+      const r = horizontal ? row : row + i;
+      const c = horizontal ? col + i : col;
+
+      const orthogonalChecks = horizontal
+        ? [[r - 1, c], [r + 1, c]]
+        : [[r, c - 1], [r, c + 1]];
+
+      for (const [rr, cc] of orthogonalChecks) {
+        if (rr >= 0 && rr < gridSize && cc >= 0 && cc < gridSize && grid[rr][cc] && !word.includes(grid[rr][cc])) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
 
   function placeWords() {
     words.forEach(word => {
       const uppercaseWord = word.toUpperCase();
-      const isHorizontal = Math.random() < 0.5;
       let placed = false;
+      while (!placed) {
+        const horizontal = Math.random() < 0.5;
+        const maxStart = gridSize - uppercaseWord.length;
+        const row = horizontal
+          ? Math.floor(Math.random() * gridSize)
+          : Math.floor(Math.random() * (gridSize - uppercaseWord.length));
+        const col = horizontal
+          ? Math.floor(Math.random() * (gridSize - uppercaseWord.length))
+          : Math.floor(Math.random() * gridSize);
 
-      for (let tries = 0; tries < 100 && !placed; tries++) {
-        const row = Math.floor(Math.random() * gridSize);
-        const col = Math.floor(Math.random() * gridSize);
-        const length = uppercaseWord.length;
-
-        if (isHorizontal && col + length <= gridSize) {
-          let canPlace = true;
-          for (let i = 0; i < length; i++) {
-            if (grid[row][col + i] !== "") {
-              canPlace = false;
-              break;
-            }
+        if (checkOverlap(row, col, uppercaseWord, horizontal)) {
+          for (let i = 0; i < uppercaseWord.length; i++) {
+            const r = horizontal ? row : row + i;
+            const c = horizontal ? col + i : col;
+            grid[r][c] = uppercaseWord[i];
           }
-          if (canPlace) {
-            for (let i = 0; i < length; i++) {
-              grid[row][col + i] = uppercaseWord[i];
-            }
-            placed = true;
-          }
-        } else if (!isHorizontal && row + length <= gridSize) {
-          let canPlace = true;
-          for (let i = 0; i < length; i++) {
-            if (grid[row + i][col] !== "") {
-              canPlace = false;
-              break;
-            }
-          }
-          if (canPlace) {
-            for (let i = 0; i < length; i++) {
-              grid[row + i][col] = uppercaseWord[i];
-            }
-            placed = true;
-          }
+          placed = true;
         }
       }
-
-      if (!placed) console.warn("Could not place word:", word);
     });
   }
 
-  function fillRandomLetters() {
+  function fillGrid() {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
@@ -140,12 +145,9 @@
     }
   }
 
-  let selectedCells = [];
-  let foundWords = [];
-
   function renderGrid() {
-    const gridContainer = document.getElementById("grid");
-    gridContainer.innerHTML = "";
+    const gridDiv = document.getElementById("grid");
+    gridDiv.innerHTML = "";
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         const cell = document.createElement("div");
@@ -154,11 +156,14 @@
         cell.dataset.row = r;
         cell.dataset.col = c;
         cell.addEventListener("click", () => handleClick(cell));
-        gridContainer.appendChild(cell);
+        gridDiv.appendChild(cell);
       }
     }
     updateWordList();
   }
+
+  let selectedCells = [];
+  let foundWords = [];
 
   function handleClick(cell) {
     if (cell.classList.contains("found")) return;
@@ -187,19 +192,19 @@
       updateWordList();
 
       if (foundWords.length === words.length) {
-        setTimeout(() => alert("🎉 You found all the words! 🎉"), 200);
+        setTimeout(() => alert("🎉 You found all the words! 🎉"), 300);
       }
     }
   }
 
   function updateWordList() {
-    const list = document.getElementById("wordList");
-    list.innerHTML = "";
+    const wordList = document.getElementById("wordList");
+    wordList.innerHTML = "";
     words.forEach(word => {
       const span = document.createElement("span");
       span.textContent = word;
       if (foundWords.includes(word)) span.classList.add("done");
-      list.appendChild(span);
+      wordList.appendChild(span);
     });
   }
 
@@ -224,7 +229,7 @@
   }
 
   placeWords();
-  fillRandomLetters();
+  fillGrid();
   renderGrid();
 </script>
 
