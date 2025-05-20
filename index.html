@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Word Search Game</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #fceabb, #f8b500);
+      font-family: Aerial;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #444;
+      font-weight: bold;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(12, 40px);
+      gap: 2px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .cell {
+      width: 40px;
+      height: 40px;
+      background: #fff;
+      border: 1px solid #ccc;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .selected {
+      background: orange;
+      color: #fff;
+    }
+
+    .found {
+      background: lightgreen;
+      color: #000;
+    }
+
+    #wordList {
+      margin-top: 20px;
+      font-size: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      font-weight: bold;
+    }
+
+    .done {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    /* Flying letter styles */
+    .flying-letter {
+      position: absolute;
+      font-size: 24px;
+      font-weight: bold;
+      animation: fly 2s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes fly {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-200px + 400px * random()), calc(-150px + 300px * random())) scale(2);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>🧩 Word Search Game 🧩</h1>
+<div id="grid"></div>
+<div id="wordList"></div>
+
+<script>
+  const words = ["Alana", "Nicole", "Eddie", "Aaron", "Jayden", "Ai", "Noma", "Yoogeun", "Halle", "Aliz", "Eric", "Chloe", "Xender", "Wadi", "Mango", "Leo"];
+  const gridSize = 12;
+  const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
+
+  function placeWordsHorizontally() {
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i].toUpperCase();
+      let row = i % gridSize;
+      const maxStart = gridSize - word.length;
+      const col = Math.floor(Math.random() * (maxStart + 1));
+      for (let j = 0; j < word.length; j++) {
+        grid[row][col + j] = word[j];
+      }
+    }
+  }
+
+  function fillRandomLetters() {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        if (grid[r][c] === "") {
+          grid[r][c] = letters[Math.floor(Math.random() * letters.length)];
+        }
+      }
+    }
+  }
+
+  let selectedCells = [];
+  let foundWords = [];
+
+  function renderGrid() {
+    const gridContainer = document.getElementById("grid");
+    gridContainer.innerHTML = "";
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = grid[r][c];
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        cell.addEventListener("click", () => handleClick(cell));
+        gridContainer.appendChild(cell);
+      }
+    }
+    updateWordList();
+  }
+
+  function handleClick(cell) {
+    if (cell.classList.contains("found")) return;
+
+    if (selectedCells.includes(cell)) {
+      cell.classList.remove("selected");
+      selectedCells = selectedCells.filter(c => c !== cell);
+    } else {
+      cell.classList.add("selected");
+      selectedCells.push(cell);
+    }
+
+    const word = selectedCells.map(c => c.textContent).join('');
+    const reversed = word.split('').reverse().join('');
+    const match = words.find(w => w.toUpperCase() === word || w.toUpperCase() === reversed);
+
+    if (match && !foundWords.includes(match)) {
+      selectedCells.forEach(c => {
+        c.classList.remove("selected");
+        c.classList.add("found");
+      });
+
+      launchFlyingLetters(selectedCells); // 🎉 fly effect
+
+      foundWords.push(match);
+      selectedCells = [];
+      updateWordList();
+
+      if (foundWords.length === words.length) {
+        setTimeout(() => alert("🎉 You found all the words! 🎉"), 100);
+      }
+    }
+  }
+
+  function updateWordList() {
+    const list = document.getElementById("wordList");
+    list.innerHTML = "";
+    words.forEach(word => {
+      const span = document.createElement("span");
+      span.textContent = word;
+      if (foundWords.includes(word)) span.classList.add("done");
+      list.appendChild(span);
+    });
+  }
+
+  // 💫 Flying letter animation
+  function launchFlyingLetters(cells) {
+    cells.forEach(cell => {
+      const letter = cell.textContent;
+      const flying = document.createElement("div");
+      flying.className = "flying-letter";
+      flying.textContent = letter;
+
+      const rect = cell.getBoundingClientRect();
+      flying.style.left = rect.left + "px";
+      flying.style.top = rect.top + "px";
+
+      // Custom fly animation path (randomized)
+      flying.style.transform = `translate(${Math.random() * 400 - 200}px, ${Math.random() * 300 - 150}px) scale(2)`;
+      flying.style.transition = "all 2s ease-out";
+
+      document.body.appendChild(flying);
+
+      setTimeout(() => flying.remove(), 2000);
+    });
+  }
+
+  placeWordsHorizontally();
+  fillRandomLetters();
+  renderGrid();
+</script>
+
+</body>
+</html>
